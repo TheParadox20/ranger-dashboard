@@ -1,26 +1,122 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* ── Backgrounds ───────────────────────────────── */
+  --color-base:     #070d14;
+  --color-surface:  #0c1624;
+  --color-panel:    #101e30;
+  --color-elevated: #162840;
 
-@theme inline {
+  /* ── Borders ───────────────────────────────────── */
+  --color-border:       #1a2e44;
+  --color-border-light: #243d58;
+
+  /* ── Text ──────────────────────────────────────── */
+  --color-primary:   #dce8f5;
+  --color-secondary: #6e90b3;
+  --color-muted:     #314d68;
+
+  /* ── Accent – forest green ─────────────────────── */
+  --color-accent:       #16a34a;
+  --color-accent-bright:#22c55e;
+  --color-accent-dim:   #052b12;
+
+  /* ── Status ────────────────────────────────────── */
+  --color-active:  #22c55e;
+  --color-resting: #60a5fa;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+  --color-offline: #4b5563;
+
+  /* ── Chart colours ─────────────────────────────── */
+  --color-hr:   #ef4444;
+  --color-elev: #60a5fa;
+  --color-oxy:  #a78bfa;
+  --color-step: #22c55e;
+
+  /* ── Fonts ─────────────────────────────────────── */
+  --font-display: var(--font-rajdhani);
+  --font-body:    var(--font-dm-sans);
+  --font-mono:    var(--font-ibm-mono);
+
+  /* ── shadcn compat ─────────────────────────────── */
+  --background:       #070d14;
+  --foreground:       #dce8f5;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ── Base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-base);
+  color: var(--color-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar       { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-light); border-radius: 2px; }
+
+/* ── Mapbox overrides ─────────────────────────────── */
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right { display: none !important; }
+.mapboxgl-ctrl-top-right .mapboxgl-ctrl { margin: 8px 8px 0 0; }
+.mapboxgl-ctrl button {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+}
+.mapboxgl-ctrl button span { filter: invert(1); }
+
+/* ── Hiker marker pulse ───────────────────────────── */
+@keyframes ring-pulse {
+  0%   { transform: scale(1);   opacity: 0.9; }
+  70%  { transform: scale(2.5); opacity: 0; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.marker-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: ring-pulse 2s ease-out infinite;
+}
+
+/* ── Fade-in ──────────────────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fade-up 0.4s ease forwards; }
+
+/* ── Login topo pattern ───────────────────────────── */
+.topo-bg {
+  background-color: #050b11;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(22,163,74,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 80% at 80% 60%, rgba(96,165,250,0.05) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23122030' stroke-width='0.6'%3E%3Ccircle cx='40' cy='40' r='10'/%3E%3Ccircle cx='40' cy='40' r='20'/%3E%3Ccircle cx='40' cy='40' r='30'/%3E%3Ccircle cx='40' cy='40' r='40'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ── Scanline overlay for login ───────────────────── */
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+}
+
+/* ── Chart.js canvas sizing ───────────────────────── */
+canvas { max-width: 100%; }
