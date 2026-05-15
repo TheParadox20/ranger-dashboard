@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Heart, Users } from 'lucide-react';
 import { HIKERS } from '@/lib/dummy-data';
@@ -8,6 +8,7 @@ import AppHeader from '@/components/AppHeader';
 import HikerSidebar from '@/components/HikerSidebar';
 import HealthPanel from '@/components/HealthPanel';
 import EmergencyContactsPanel from '@/components/EmergencyContactsPanel';
+import useDashboardWebSocket from '@/hooks/useDashboardWebSocket';
 import { cn } from '@/lib/utils';
 
 // Load Mapbox client-side only (browser API)
@@ -28,15 +29,74 @@ const TABS = [
   { id: 'contacts', label: 'Contacts', icon: Users },
 ];
 
+const HISTORY_MAX = 60;
+
+function appendHistory(arr, val) {
+  const next = [...(arr ?? []), val];
+  return next.length > HISTORY_MAX ? next.slice(-HISTORY_MAX) : next;
+}
+
 export default function DashboardPage() {
   const [hikers,     setHikers]     = useState(HIKERS);
   const [selectedId, setSelectedId] = useState(HIKERS[0].id);
   const [activeTab,  setActiveTab]  = useState('vitals');
 
+  const { connectedUsers, connectionState, serialData, sendJson } = useDashboardWebSocket();
+
   const selectedHiker = useMemo(
     () => hikers.find(h => h.id === selectedId) ?? null,
     [hikers, selectedId],
   );
+
+  useEffect(() => {
+    if (connectionState !== 'open') return;
+    sendJson({ type: 'setup', data: { client: 'ranger-dashboard' } });
+  }, [connectionState, sendJson]);
+
+  // Map live serial data to H001
+  useEffect(() => {
+    if (!serialData) return;
+
+    const { noFinger, bpm, spo2, spo2Valid, skin, gsr, rssi, snr, temp, lat, lon } = serialData;
+
+    setHikers(prev => prev.map(h => {
+      if (h.id !== 'H001') return h;
+
+      const newStatus = (noFinger || bpm === 0)
+        ? h.status
+        : bpm > 120 || bpm < 45 || (spo2Valid && spo2 > 0 && spo2 < 90)
+          ? 'warning'
+          : 'active';
+
+      return {
+        ...h,
+        lastUpdate: 'Live',
+        status: newStatus,
+        location: (lat !== 0 || lon !== 0) ? { lat, lng: lon } : h.location,
+        currentStats: {
+          ...h.currentStats,
+          heartRate:   (noFinger || bpm === 0) ? h.currentStats.heartRate : bpm,
+          oxygenSat:   (!noFinger && spo2Valid && spo2 > 0) ? spo2 : h.currentStats.oxygenSat,
+          temperature: skin,
+          ambientTemp: temp,
+          gsr,
+          rssi,
+          snr,
+          noFinger,
+          spo2Valid,
+        },
+        heartRateHistory: (noFinger || bpm === 0)
+          ? h.heartRateHistory
+          : appendHistory(h.heartRateHistory, bpm),
+        oxygenSatHistory: (noFinger || !spo2Valid)
+          ? h.oxygenSatHistory
+          : appendHistory(h.oxygenSatHistory, spo2),
+        gsrHistory:      appendHistory(h.gsrHistory ?? [], gsr),
+        skinTempHistory: appendHistory(h.skinTempHistory ?? [], skin),
+        rssiHistory:     appendHistory(h.rssiHistory ?? [], rssi),
+      };
+    }));
+  }, [serialData]);
 
   const handleSelect = (id) => {
     setSelectedId(id);
@@ -59,6 +119,8 @@ export default function DashboardPage() {
           hikers={hikers}
           selectedId={selectedId}
           onSelect={handleSelect}
+          connectionState={connectionState}
+          connectedUsers={connectedUsers}
         />
 
         {/* ── Map ── */}
@@ -69,7 +131,7 @@ export default function DashboardPage() {
         />
 
         {/* ── Right panel ── */}
-        <aside className="w-80 flex-shrink-0 flex flex-col bg-surface border-l border-border overflow-hidden">
+        <aside className="w-80 shrink-0 flex flex-col bg-surface border-l border-border overflow-hidden">
           {/* Hiker header */}
           {selectedHiker && (
             <div className="px-4 pt-3 pb-0 border-b border-border bg-panel/50">

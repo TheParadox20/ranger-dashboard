@@ -17,7 +17,13 @@ const STATUS_LABELS = {
 
 const FILTER_OPTS = ['all', 'active', 'resting', 'warning', 'sos', 'offline'];
 
-export default function HikerSidebar({ hikers, selectedId, onSelect }) {
+export default function HikerSidebar({
+  hikers,
+  selectedId,
+  onSelect,
+  connectionState = 'idle',
+  connectedUsers = 0,
+}) {
   const [query,  setQuery]  = useState('');
   const [filter, setFilter] = useState('all');
 
@@ -126,6 +132,9 @@ export default function HikerSidebar({ hikers, selectedId, onSelect }) {
       <div className="px-4 py-2.5 border-t border-border bg-base/40">
         <p className="text-[10px] font-mono text-muted uppercase tracking-widest">
           {visible.length} / {hikers.length} hikers shown
+        </p>
+        <p className="mt-1 text-[10px] font-mono text-muted uppercase tracking-widest">
+          Socket {connectionState} · {connectedUsers} connected
         </p>
       </div>
     </aside>
