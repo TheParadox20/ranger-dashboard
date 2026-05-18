@@ -1,5 +1,12 @@
-import { Shield, Radio, AlertTriangle, Clock } from 'lucide-react';
-import { SUMMARY } from '@/lib/dummy-data';
+'use client';
+
+import Link from 'next/link';
+import { Shield, Radio, AlertTriangle, Clock, Settings } from 'lucide-react';
+
+const EMPTY_SUMMARY = { active: 0, resting: 0, warning: 0, sos: 0, offline: 0 };
+
+const selectCls =
+  'h-7 px-2 rounded bg-elevated border border-border text-primary text-xs outline-none focus:border-accent/60 transition-colors max-w-[200px]';
 
 function LiveClock() {
   // Static time for SSR — client hydrates immediately
@@ -12,7 +19,12 @@ function LiveClock() {
   );
 }
 
-export default function AppHeader() {
+export default function AppHeader({
+  summary = EMPTY_SUMMARY,
+  sessions = [],
+  selectedSessionId = '',
+  onSelectSession,
+}) {
   return (
     <header className="flex-shrink-0 h-12 bg-surface border-b border-border flex items-center px-4 gap-4 z-20">
       {/* Brand */}
@@ -23,7 +35,28 @@ export default function AppHeader() {
         <span className="font-display font-bold text-base uppercase tracking-widest text-primary whitespace-nowrap">
           Ranger Command
         </span>
-        <span className="text-muted text-xs font-mono hidden sm:inline">v2.1.0</span>
+      </div>
+
+      <div className="h-5 w-px bg-border" />
+
+      {/* Session selector */}
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-[10px] font-mono text-muted uppercase tracking-widest hidden md:inline">
+          Session
+        </span>
+        <select
+          className={selectCls}
+          value={selectedSessionId}
+          onChange={(e) => onSelectSession?.(e.target.value)}
+          disabled={sessions.length === 0}
+        >
+          {sessions.length === 0 && <option value="">No sessions</option>}
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} {s.status === 'active' ? '· active' : '· ended'}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="h-5 w-px bg-border" />
@@ -32,25 +65,25 @@ export default function AppHeader() {
       <div className="flex items-center gap-3 text-xs font-mono">
         <span className="flex items-center gap-1.5 text-active">
           <span className="w-1.5 h-1.5 rounded-full bg-active animate-pulse" />
-          {SUMMARY.active} Active
+          {summary.active} Active
         </span>
         <span className="flex items-center gap-1.5 text-resting">
           <span className="w-1.5 h-1.5 rounded-full bg-resting" />
-          {SUMMARY.resting} Resting
+          {summary.resting} Resting
         </span>
-        {SUMMARY.warning > 0 && (
+        {summary.warning > 0 && (
           <span className="flex items-center gap-1.5 text-warning">
             <AlertTriangle size={11} />
-            {SUMMARY.warning} Warning
+            {summary.warning} Warning
           </span>
         )}
-        {SUMMARY.sos > 0 && (
+        {summary.sos > 0 && (
           <span className="flex items-center gap-1.5 text-danger font-bold animate-pulse">
             <Radio size={11} />
-            {SUMMARY.sos} SOS
+            {summary.sos} SOS
           </span>
         )}
-        <span className="text-muted">{SUMMARY.offline} Offline</span>
+        <span className="text-muted">{summary.offline} Offline</span>
       </div>
 
       {/* Spacer */}
@@ -58,6 +91,14 @@ export default function AppHeader() {
 
       {/* Right cluster */}
       <div className="flex items-center gap-4">
+        <Link
+          href="/dashboard/sessions"
+          className="flex items-center gap-1.5 text-secondary hover:text-primary text-xs transition-colors"
+        >
+          <Settings size={12} />
+          <span className="hidden sm:inline">Manage</span>
+        </Link>
+        <div className="h-5 w-px bg-border" />
         <div className="flex items-center gap-1.5 text-secondary text-xs">
           <Radio size={12} className="text-accent-bright animate-pulse" />
           <span className="font-mono">LIVE</span>
@@ -66,13 +107,6 @@ export default function AppHeader() {
         <div className="flex items-center gap-1.5 text-secondary text-xs">
           <Clock size={12} />
           <LiveClock />
-        </div>
-        <div className="h-5 w-px bg-border" />
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-accent/20 border border-accent/40 flex items-center justify-center">
-            <span className="text-[10px] font-bold font-display text-accent-bright">R</span>
-          </div>
-          <span className="text-xs text-secondary hidden sm:inline">Ranger HQ</span>
         </div>
       </div>
     </header>

@@ -140,7 +140,7 @@ export default function HealthPanel({ hiker }) {
 
   const { currentStats: s } = hiker;
   const isOffline = hiker.status === 'offline';
-  const hasLiveData = (hiker.gsrHistory?.length ?? 0) > 0;
+  const hasLiveData = !!hiker.isLive;
 
   const o2Gauge = {
     datasets: [{
@@ -169,6 +169,22 @@ export default function HealthPanel({ hiker }) {
           Sensor not on finger · Biometrics paused
         </div>
       )}
+      {hiker.outsideFence && (
+        <div className="bg-danger/10 border border-danger/30 rounded-lg px-3 py-2 text-xs text-danger flex items-center gap-2 font-semibold">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-danger animate-pulse shrink-0" />
+          Outside assigned route · Geofence breach
+        </div>
+      )}
+
+      {/* ── Profile strip ── */}
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-panel border border-border text-xs">
+        <span className="text-muted font-mono uppercase tracking-widest text-[10px]">
+          Blood group
+        </span>
+        <span className="text-primary font-semibold ml-auto">
+          {hiker.bloodGroup || '—'}
+        </span>
+      </div>
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 gap-2">

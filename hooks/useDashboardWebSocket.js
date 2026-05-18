@@ -5,9 +5,16 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 
 const DEFAULT_URL = 'ws://localhost:8080';
 
-export default function useDashboardWebSocket(url = process.env.NEXT_PUBLIC_WEBSOCKET_URL || DEFAULT_URL) {
+export default function useDashboardWebSocket({
+  url = process.env.NEXT_PUBLIC_WEBSOCKET_URL || DEFAULT_URL,
+  onSerial,
+} = {}) {
   const socketRef = useRef(null);
   const lastValidCoordsRef = useRef(null);
+  const onSerialRef = useRef(onSerial);
+  useEffect(() => {
+    onSerialRef.current = onSerial;
+  }, [onSerial]);
   const [connectionState, setConnectionState] = useState(url ? 'connecting' : 'idle');
   const [connectedUsers, setConnectedUsers] = useState(0);
   const [lastMessage, setLastMessage] = useState(null);
@@ -49,7 +56,8 @@ export default function useDashboardWebSocket(url = process.env.NEXT_PUBLIC_WEBS
           }
           const coords = lastValidCoordsRef.current;
 
-          setSerialData({
+          const normalized = {
+            deviceId: d.device_id ?? null,
             seq:      d.seq,
             ts:       d.ts,
             gsr:      d.gsr,
@@ -65,7 +73,12 @@ export default function useDashboardWebSocket(url = process.env.NEXT_PUBLIC_WEBS
             rssi: d.rssi,
             snr:  d.snr,
             receivedAt: payload.receivedAt,
-          });
+          };
+
+          setSerialData(normalized);
+          // External-system callback: lets consumers accumulate per-device
+          // state without an effect→setState cascade.
+          onSerialRef.current?.(normalized);
         }
       } catch {
         setLastMessage(event.data);

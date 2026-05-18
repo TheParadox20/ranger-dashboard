@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Heart, Mountain, Footprints } from 'lucide-react';
+import { Search, Heart, Wind, Thermometer } from 'lucide-react';
 import { Avatar } from './ui/avatar';
 import { Badge, StatusDot } from './ui/badge';
 import { Input } from './ui/input';
@@ -106,15 +106,17 @@ export default function HikerSidebar({
                   <div className="flex items-center gap-3 mt-1.5 text-[10px] font-mono">
                     <span className="flex items-center gap-1 text-hr">
                       <Heart size={9} />
-                      {h.currentStats.heartRate} bpm
+                      {h.currentStats.heartRate || '—'} bpm
                     </span>
-                    <span className="flex items-center gap-1 text-elev">
-                      <Mountain size={9} />
-                      {h.currentStats.elevation.toLocaleString()} m
+                    <span className="flex items-center gap-1 text-oxy">
+                      <Wind size={9} />
+                      {h.currentStats.oxygenSat || '—'}%
                     </span>
-                    <span className="flex items-center gap-1 text-step">
-                      <Footprints size={9} />
-                      {(h.currentStats.steps / 1000).toFixed(1)}k
+                    <span className="flex items-center gap-1 text-secondary">
+                      <Thermometer size={9} />
+                      {h.currentStats.temperature
+                        ? `${h.currentStats.temperature.toFixed(1)}°`
+                        : '—'}
                     </span>
                   </div>
                 )}
