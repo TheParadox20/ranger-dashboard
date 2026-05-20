@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Heart, Users, Plus } from 'lucide-react';
@@ -222,6 +222,31 @@ export default function DashboardPage() {
     () => hikers.find((h) => h.id === selectedUserId) ?? hikers[0] ?? null,
     [hikers, selectedUserId],
   );
+
+  // Notify the serial bridge whenever the aggregate fence state for the
+  // selected session flips. The bridge forwards `inside`/`outside` over the
+  // serial link to the receiver ESP, so we only POST on transitions.
+  const lastFenceStateRef = useRef({ sessionId: null, state: null });
+  useEffect(() => {
+    const remote = process.env.NEXT_PUBLIC_REMOTE_URL;
+    if (!remote || !selectedSession || !fence) return;
+
+    const liveWithFix = hikers.filter((h) => h.isLive && h.location);
+    if (liveWithFix.length === 0) return;
+
+    const state = liveWithFix.some((h) => h.outsideFence) ? 'outside' : 'inside';
+    const last = lastFenceStateRef.current;
+    if (last.sessionId === selectedSession.id && last.state === state) return;
+
+    lastFenceStateRef.current = { sessionId: selectedSession.id, state };
+    fetch(`${remote}/api/geofence`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state }),
+    }).catch((err) => {
+      console.error('Geofence POST failed:', err);
+    });
+  }, [hikers, selectedSession, fence]);
 
   const handleSelect = (id) => {
     setSelectedUserId(id);
